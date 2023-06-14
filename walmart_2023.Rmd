@@ -1,0 +1,84 @@
+---
+title: "Walmart_Data"
+author: "Emmanuel Rodríguez Silva"
+date: "6/12/2023"
+output: pdf_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+
+## WALMART DATA EXPLORATION
+
+This project focused on the analysis of sales in 5 different Walmart's stores.
+
+> My objetive here is to explore the effect of holidays on sales
+
+
+
+```{r loading_libraries, message=FALSE, warning=FALSE}
+library(palmerpenguins)
+library(ggplot2)
+library(tidyverse)
+library(dplyr)
+library(lubridate)
+library(here)     # referencing files easier
+library(skimr)    # simplify data cleaning task (summarizing)
+library(janitor)
+
+```
+
+
+
+```{r loading_data}
+wal_data <- read.csv(file = "walmart_cleaned.csv", header = T)
+head(wal_data)
+str(wal_data)
+```
+
+
+```{r order_sales}
+wal_data %>% group_by(Store) %>% summarise(mean_sales = mean(Weekly_Sales), 
+                                           min_sales = min(Weekly_Sales),
+                                           max_sales = max(Weekly_Sales)) %>%
+  arrange(desc(mean_sales))
+
+wal_data %>% filter(Weekly_Sales < 0)
+
+```
+
+
+
+
+```{r}
+non_holiday <- wal_data %>% filter(-Weekly_Sales < 0) %>% select(IsHoliday, Weekly_Sales) %>% 
+  filter(IsHoliday == 0)
+
+holiday <- wal_data %>% filter(-Weekly_Sales < 0) %>% select(IsHoliday, Weekly_Sales) %>% 
+  filter(IsHoliday == 1)
+
+data_combined <- rbind(non_holiday, holiday) # This command is useful to add new observations, by adding different values from 2 datasets
+
+boxplot(factor(data_combined$IsHoliday), as.numeric(round(data_combined$Weekly_Sales)))
+
+```
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

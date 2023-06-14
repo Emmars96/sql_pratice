@@ -1,0 +1,299 @@
+---
+title: "TSUNAMIS - INTERNATIONAL"
+author: "Emmanuel Rodríguez Silva"
+date: "6/10/2023"
+output: pdf_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## 1. TSUNAMIS AROUND THE WORLD - DATA PROVIDED BY THE NOAA (US)
+
+
+This document contains some practice using datasets that were acquired in SQL (Structured Query Language).
+
+> This project have the following objectives:
+>
+>> 1. Practice R programming
+>> 2. Combine the usage of SQL and R
+>> 3. Make better graphics
+>
+
+```{r loading_libraries, message=FALSE, warning=FALSE}
+library(palmerpenguins)
+library(ggplot2)
+library(tidyverse)
+library(dplyr)
+library(lubridate)
+library(here)     # referencing files easier
+library(skimr)    # simplify data cleaning task (summarizing)
+library(janitor)
+
+```
+
+
+```{r reading_data}
+
+tsunamis <- read.csv(file = "tsunamis.csv", header = T)
+head(tsunamis)
+
+str(tsunamis)
+
+```
+
+
+```{r exploring_data}
+str(tsunamis)
+colnames(tsunamis)
+
+```
+
+
+
+
+Now, let's organize our dataset in order to create beautiful dataviz
+
+```{r organize}
+ tsunamis %>% group_by(country) %>% arrange(country)
+ 
+ tsunamis_impact <- tsunamis %>% group_by(country) %>%
+  summarize(mean_deaths = round(mean(deaths)), max_deaths = max(deaths), min_deaths = min(deaths)) %>%
+  arrange(desc(mean_deaths)) %>% head(n = 10)
+
+```
+
+
+Now that we have ordered and cleaned our data, let's do some visualizations
+
+```{r data_viz}
+mi_col <- c("deepskyblue3")
+
+ggplot(data = tsunamis_impact, aes(x = mean_deaths, y = reorder(country, mean_deaths))) +
+  # I ll use colums to graph
+  geom_col(fill = mi_col, col = "black")+
+  # adding maximum values in order to show discrepancies
+  geom_text(aes(label = max_deaths), hjust = -1, fontface = "italic", size = 3)+
+  # ADDING LABELS
+  labs(title = "Deaths caused by tsunamis per country",
+      subtitle = "Most deadly tsunamis since 2000 B.C.",
+      caption = "Source: The Global Historical Tsunami Database (NOAA, 2020)",
+      y = "Country", x = " Deaths")+
+  scale_x_continuous(limits = c(0, 40000.5), breaks = seq(0, 40000, 10000)) +
+  theme_gray()+
+  # CUSTOMIZING LABELS
+  theme(plot.title = element_text(family = "Times", face = "bold", size = 19, hjust = 0.5, vjust = 2.5),
+        plot.subtitle = element_text(family = "Times", size = 15, hjust = 0.5, vjust = 1.5),
+        plot.caption = element_text(size = 13, vjust = -1),
+        axis.title = element_text(family = "Times", face = "bold", size = 16))
+
+
+```
+
+
+As we can infer from the plot above is that mean does not represents well the deadly
+effect of tsunamis, because some countries had just one tsunami, and it caused many deaths
+
+
+
+
+## 2. Student Mental Health Project (Kaggle)
+
+
+This time I will explore data downloaded from Kaggle, I'm interested in investigating the
+mental health of university students
+
+> My objectives are:
+>
+>> 1. Data cleaning and organize it
+>> 2. Exploring difference by sex, major, age
+>> 3. Elaborate some data viz
+>
+
+```{r loading_data_health}
+mental <- read.csv(file = "student_mental_health.csv", header = T)
+head(mental)
+
+```
+
+
+
+I want to explore the differences between sex
+
+
+```{r organize_data}
+colnames(mental)
+
+mental_2 <- mental %>% mutate(sex = Choose.your.gender, anxiety = Do.you.have.Anxiety., depression = Do.you.have.Depression., course = What.is.your.course.) %>% select(sex, anxiety, Age, depression) %>%
+  group_by(sex) %>% summarize(how_many_have_anxiety = sum(anxiety == "Yes"), how_many_depressed = sum(depression == "Yes"))
+
+colnames(mental_2)
+  
+#  group_by(sex)
+
+```
+
+
+```{r graphics}
+my_colors <- c("deeppink3", "deepskyblue4")
+
+ggplot(data = mental_2, aes(x = sex, y = how_many_have_anxiety)) +
+  geom_col(fill = my_colors, col = "black", width = 0.4)+
+  scale_y_continuous(limits = c(0, 40.5), breaks = seq(0, 40, 10))+
+  labs(title = "Anxiety in University Students",
+       subtitle = "Differences in mental health between sex",
+       caption = "Data set was collected by a survey conducted by Google forms",
+       x = "Sex", y = "Number of people")+
+  theme(plot.title = element_text(family = "Times", face = "bold", size = 19, hjust = 0.5, vjust = 2.5),
+        plot.subtitle = element_text(family = "Times", size = 15, hjust = 0.5, vjust = 1.5),
+        plot.caption = element_text(family = "Times", size = 11),
+        axis.title = element_text(family = "Times", size = 13, face = "bold"))+
+  theme(aspect.ratio = 0.8)
+
+
+```
+
+
+
+
+```{r lets_explore_courses}
+
+mental_3 <- mental %>% mutate(sex = Choose.your.gender, anxiety = Do.you.have.Anxiety., depression = Do.you.have.Depression., course = What.is.your.course.) %>% select(sex, anxiety, Age, depression, course)
+
+mental_4 <- mental_3 %>% distinct(course)
+# there is nothing interesting about courses, we need more data
+
+```
+
+
+
+
+
+##  Let's construct a linear regression model based on information regarding experience and salary
+
+
+> I have just 2 main porpuses:
+>
+>> to recall the process of modelling Linear Regression models and,
+>> to interpret the results
+>
+
+
+```{r loading_info}
+
+salary <- read.csv(file = "Salary_dataset.csv", header = T)
+head(salary, n = 8)
+
+```
+
+
+Let's observe a scatterplot to observe if there is an association between these two variables
+
+```{r scatter_plot}
+ggplot(data = salary, aes(x = YearsExperience, y = Salary))+
+  geom_point(cex = 2, col = "mediumorchid2")+
+  labs(title = "Salary vs. Experience",
+       caption = "Data provided by Allena Venkata from her Kaggle  account (2023)",
+       x = "Experience in Years")+
+  theme_grey()+
+  theme(plot.title = element_text(family = "Times", face = "bold", size = 19, hjust = 0.5, vjust = 2.5),
+        plot.caption = element_text(family = "Times", size = 11),
+        axis.title = element_text(family = "Times", size = 13, face = "bold"))
+  
+
+
+```
+
+Now, I have seen some evidence about the relationship between salary and experience, I need some statistical proves, I'll apply test in order to discover the type of distribution, if data is normal, I ll apply parametric statistics, otherwise, we should use non-parametric statistics.
+
+
+```{r correlation}
+shapiro.test(salary$Salary)
+shapiro.test(salary$YearsExperience)
+
+```
+According to the normality test, only the experience has a normal distribution, because P is greater than **0.05**
+
+So, let's try to predict the salary based on experience, but first of all, I need to make sure there is
+significance relationship between them
+
+
+```{r correlation_coefficient}
+cor.test(salary$Salary, salary$YearsExperience)
+
+
+```
+
+After applying the **pearson's correlation coefficient**, I noticed that exist a strong positive correlation between our variables, having said that, I will proceed with the elaboration of the linear model.
+
+
+
+```{r linear_model}
+
+
+model_salary <- lm(Salary ~ YearsExperience, data = salary)  
+summary(model_salary)
+
+
+plot(model_salary)
+
+```
+
+The previous model indicates that, for one (unit = year)increment in experience, the salary expected will increase **$9,450.00**  Knowing that, We can predict a salary based on how many years of experience a person has.
+
+
+```{r predicting_manually}
+# manually predicting salary according with coefficients model
+
+print("y =24848.2 + 9450.0 * 10")
+
+
+# calculating salary for a person with 10 years of experience
+
+salary_predicted = 24848.2 + 9450.0 * 10
+
+salary_predicted
+```
+
+
+```{r predinting_with_fucntion}
+value <- data.frame(YearsExperience = 10)
+
+
+predict(model_salary, value)
+
+```
+
+
+
+```{r ggplot_lm}
+ggplot(data = salary, aes(x = YearsExperience, y = Salary)) +
+  geom_point() +
+  geom_smooth(method='lm')+
+  geom_text(x = 8.5, y = 48000, label = "y = 24848.2 + 9450.0 * experience + e \n  y = b0 + b1*x + e")+
+  labs(title = "Linear Regression (Predicting Salary)",
+       caption = "Source: Salary Dataset on Kaggle by Allena Venkata (2023)")+
+  theme_grey()+
+  theme(plot.title = element_text(family = "Times", face = "bold", size = 19, hjust = 0.5, vjust = 2.5),
+        plot.caption = element_text(family = "Times", size = 11),
+        axis.title = element_text(family = "Times", face = "bold", size = 15))
+
+
+
+```
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
